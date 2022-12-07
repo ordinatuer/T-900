@@ -9,13 +9,14 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"math/rand"
 	"time"
 )
 
-const house = 17783 // ID Дома
+const house = 25123 // ID Дома
 // перебор квартир от roomMax до roomMin
-const roomMax = 25
-const roomMin = 15
+const roomMax = 2803
+const roomMin = 1
 
 const login = "bednyh.d"  // логин
 const password = "SqguXZ" // пароль
@@ -53,8 +54,16 @@ func main() {
 	skynetAll := 0 // счётчик всех из диапазона
 	_t := time.Now()
 
+	rand.Seed(time.Now().UnixNano())
+	var n int
+
 	// перебор квартир из указанного  диапазона
 	for i := roomMax; roomMin <= i; i-- {
+		// задержка
+		n = rand.Intn(1000)
+		n = n + 500
+		time.Sleep(time.Duration(n) * time.Millisecond)
+
 		_url := fmt.Sprintf(url, house, i)
 
 		req, err := http.NewRequest(method, _url, nil)
@@ -73,6 +82,7 @@ func main() {
 		req.Header.Add("x-requested-with", "XMLHttpRequest")
 		req.Header.Add("sec-ch-ua-platform", "\"Windows\"")
 		req.Header.Add("Cookie", cookie)
+		req.Header.Add("i-nave-a-qustion", "can i take all of them with one request?")
 
 		res, err := client.Do(req)
 		if err != nil {
@@ -92,7 +102,7 @@ func main() {
 			return
 		}
 		if res.StatusCode != 200 {
-			fmt.Println("Request error with status %d")
+			fmt.Println("Request error with status %d", res.StatusCode)
 			return
 		}
 
