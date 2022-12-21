@@ -9,13 +9,12 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"math/rand"
 	"time"
 )
 
-const house = 25123 // ID Дома
+const house = 4309 // ID Дома
 // перебор квартир от roomMax до roomMin
-const roomMax = 2803
+const roomMax = 204
 const roomMin = 1
 
 const login = "bednyh.d"  // логин
@@ -52,17 +51,19 @@ func main() {
 	skynetOn := 0  // счётчик подключенных
 	skynetOff := 0 // счётчик НЕподключенных
 	skynetAll := 0 // счётчик всех из диапазона
-	_t := time.Now()
 
-	rand.Seed(time.Now().UnixNano())
-	var n int
+	authRetry := 0
+	authRetryMax := 5
+	_t := time.Now()
 
 	// перебор квартир из указанного  диапазона
 	for i := roomMax; roomMin <= i; i-- {
 		// задержка
-		n = rand.Intn(1000)
-		n = n + 500
-		time.Sleep(time.Duration(n) * time.Millisecond)
+		// n = rand.Intn(1000)
+		// n = n + 500
+		// time.Sleep(time.Duration(n) * time.Millisecond)
+
+		waitLtl()
 
 		_url := fmt.Sprintf(url, house, i)
 
@@ -82,7 +83,7 @@ func main() {
 		req.Header.Add("x-requested-with", "XMLHttpRequest")
 		req.Header.Add("sec-ch-ua-platform", "\"Windows\"")
 		req.Header.Add("Cookie", cookie)
-		req.Header.Add("i-nave-a-qustion", "can i take all of them with one request?")
+		// req.Header.Add("i-nave-a-qustion", "can i take all of them with one request?")
 
 		res, err := client.Do(req)
 		if err != nil {
@@ -99,7 +100,20 @@ func main() {
 
 		if res.StatusCode == 401 {
 			fmt.Println("Auth error. Maybe smtg wrong with cookie")
-			return
+
+			if authRetry < authRetryMax {
+				fmt.Println("Retry authorize")
+				cookieValue = auth()
+				cookie = fmt.Sprintf(cookieTmpl, cookieName, cookieValue)
+
+				authRetry++
+				i--
+			} else {
+				fmt.Println("Too many authorize failed")
+				break
+			}
+
+			continue
 		}
 		if res.StatusCode != 200 {
 			fmt.Println("Request error with status %d", res.StatusCode)
